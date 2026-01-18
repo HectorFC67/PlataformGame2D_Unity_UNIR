@@ -9,29 +9,19 @@ public class PlayerMove : MonoBehaviour
     [Header("Input (Input System)")]
     public InputActionReference moveAction;
     public InputActionReference dashAction;
+    public InputActionReference attackAction;
 
     [Header("Movement")]
     public float moveSpeed = 8f;
     public float jumpForce = 14f;
 
-    [Header("Crouch")]
-    public float crouchSpeedMultiplier = 0.5f;
-
     [Header("Ground Check (BoxCast)")]
-    [Tooltip("Capas que cuentan como suelo (por ejemplo, 'Ground' donde está Midground).")]
     public LayerMask groundLayer;
-
-    [Tooltip("Distancia extra hacia abajo para detectar suelo debajo del collider.")]
     public float groundCheckDistance = 0.08f;
-
-    [Tooltip("Encoge un poco el ancho del cast para evitar detectar paredes laterales como suelo.")]
     [Range(0.5f, 1f)] public float groundCheckWidthFactor = 0.9f;
 
     [Header("Jump Feel")]
-    [Tooltip("Permite saltar un poco después de haber dejado el suelo.")]
     public float coyoteTime = 0.1f;
-
-    [Tooltip("Si pulsas salto un poco antes de tocar suelo, lo ejecuta al aterrizar.")]
     public float jumpBufferTime = 0.1f;
 
     [Header("Dash")]
@@ -39,35 +29,52 @@ public class PlayerMove : MonoBehaviour
     public float dashDuration = 0.15f;
     public float dashCooldown = 5f;
 
+    [Header("Attack")]
+    public float attackDuration = 0.35f;
+
+    [Header("Animator")]
+    public Animator animator;
+
     private Rigidbody2D rb;
-    private Collider2D col;
+    private BoxCollider2D boxCol;
 
     private Vector2 moveInput;
-    private bool isCrouching;
 
     private bool isDashing;
     private float nextDashTime;
 
-    // Timers para jump feel
+    private bool isAttacking;
+
     private float coyoteTimer;
     private float jumpBufferTimer;
 
-    // Para evitar salto continuo si mantienes W dentro del Move
     private bool jumpLatch;
+
+    private bool groundedNow;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        col = GetComponent<Collider2D>();
+        boxCol = GetComponent<BoxCollider2D>();
+
+        if (animator == null)
+            animator = GetComponentInChildren<Animator>();
     }
 
     private void OnEnable()
     {
         if (moveAction != null) moveAction.action.Enable();
+
         if (dashAction != null)
         {
             dashAction.action.Enable();
             dashAction.action.performed += OnDashPerformed;
+        }
+
+        if (attackAction != null)
+        {
+            attackAction.action.Enable();
+            attackAction.action.performed += OnAttackPerformed;
         }
     }
 
@@ -76,31 +83,30 @@ public class PlayerMove : MonoBehaviour
         if (dashAction != null)
             dashAction.action.performed -= OnDashPerformed;
 
+        if (attackAction != null)
+        attackAction.action.performed -= OnAttackPerformed;
+
         if (moveAction != null) moveAction.action.Disable();
         if (dashAction != null) dashAction.action.Disable();
+        if (attackAction != null) attackAction.action.Disable();
     }
 
     private void Update()
     {
         moveInput = moveAction != null ? moveAction.action.ReadValue<Vector2>() : Vector2.zero;
 
-        isCrouching = moveInput.y < -0.5f;
+        groundedNow = IsGrounded_BoxCast();
 
-        bool groundedNow = IsGrounded_BoxCast();
-
-        // Coyote time
         if (groundedNow) coyoteTimer = coyoteTime;
         else coyoteTimer -= Time.deltaTime;
 
-        // Jump input (W en tu Move)
         bool wantsJump = moveInput.y > 0.5f;
 
-        // latch para que mantener W no meta inputs infinitos
         if (!wantsJump) jumpLatch = false;
 
         if (wantsJump && !jumpLatch)
         {
-            jumpBufferTimer = jumpBufferTime; // registramos “intentó saltar”
+            jumpBufferTimer = jumpBufferTime;
             jumpLatch = true;
         }
         else
@@ -108,25 +114,28 @@ public class PlayerMove : MonoBehaviour
             jumpBufferTimer -= Time.deltaTime;
         }
 
-        // Ejecutar salto si:
-        // - no estás dashing
-        // - no estás agachado
-        // - hay jump buffered
-        // - estás dentro de coyote time (suelo reciente)
-        if (!isDashing && !isCrouching && jumpBufferTimer > 0f && coyoteTimer > 0f)
+        if (!isDashing && !isAttacking && jumpBufferTimer > 0f && coyoteTimer > 0f)
         {
             Jump();
             jumpBufferTimer = 0f;
-            coyoteTimer = 0f; // consume coyote
+            coyoteTimer = 0f;
         }
+
+        if (attackAction == null && Keyboard.current != null)
+        {
+            TryAttack();
+        }
+
+        UpdateAnimator();
+        HandleFlip(moveInput.x);
     }
 
     private void FixedUpdate()
     {
         if (isDashing) return;
+        if (isAttacking) return;
 
-        float speed = moveSpeed * (isCrouching ? crouchSpeedMultiplier : 1f);
-        rb.linearVelocity = new Vector2(moveInput.x * speed, rb.linearVelocity.y);
+        rb.linearVelocity = new Vector2(moveInput.x * moveSpeed, rb.linearVelocity.y);
     }
 
     private void Jump()
@@ -137,14 +146,11 @@ public class PlayerMove : MonoBehaviour
 
     private bool IsGrounded_BoxCast()
     {
-        // Bounds del collider del jugador
-        Bounds b = col.bounds;
+        Bounds b = boxCol.bounds;
 
-        // Caja un poco más estrecha que el collider, y muy bajita
         float castWidth = b.size.x * groundCheckWidthFactor;
         Vector2 castSize = new Vector2(castWidth, 0.02f);
 
-        // Origen: justo debajo del collider
         Vector2 castOrigin = new Vector2(b.center.x, b.min.y);
 
         RaycastHit2D hit = Physics2D.BoxCast(
@@ -162,6 +168,7 @@ public class PlayerMove : MonoBehaviour
     private void OnDashPerformed(InputAction.CallbackContext ctx)
     {
         if (Time.time < nextDashTime) return;
+        if (isAttacking) return;
 
         float dir = Mathf.Sign(moveInput.x);
         if (Mathf.Abs(moveInput.x) < 0.01f)
@@ -188,11 +195,61 @@ public class PlayerMove : MonoBehaviour
         isDashing = false;
     }
 
+    private void OnAttackPerformed(InputAction.CallbackContext ctx)
+    {
+        TryAttack();
+    }
+
+    private void TryAttack()
+    {
+        if (isAttacking) return;
+        if (isDashing) return;
+        if (!groundedNow) return;
+
+        StartCoroutine(AttackCoroutine());
+    }
+
+    private IEnumerator AttackCoroutine()
+    {
+        isAttacking = true;
+
+        rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+
+        if (animator != null)
+            animator.SetBool("Atacando", true);
+
+        yield return new WaitForSeconds(attackDuration);
+
+        if (animator != null)
+            animator.SetBool("Atacando", false);
+
+        isAttacking = false;
+    }
+
+    private void UpdateAnimator()
+    {
+        if (animator == null) return;
+
+        float moveAmount = Mathf.Abs(moveInput.x);
+
+        animator.SetFloat("movement", moveAmount);
+        animator.SetBool("ensuelo", groundedNow);
+        animator.SetBool("Atacando", isAttacking);
+    }
+
+    private void HandleFlip(float xInput)
+    {
+        if (Mathf.Abs(xInput) < 0.01f) return;
+
+        Vector3 s = transform.localScale;
+        s.x = xInput > 0 ? Mathf.Abs(s.x) : -Mathf.Abs(s.x);
+        transform.localScale = s;
+    }
+
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        // Visualizar el BoxCast de suelo en editor
-        var c = GetComponent<Collider2D>();
+        var c = GetComponent<BoxCollider2D>();
         if (c == null) return;
 
         Bounds b = c.bounds;
