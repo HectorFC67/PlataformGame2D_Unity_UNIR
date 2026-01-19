@@ -1,38 +1,36 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class LevelSelectorUI : MonoBehaviour
 {
     [Header("Scenes")]
     [SerializeField] private string menuSceneName = "Menu";
 
-    [Tooltip("Duración del fade si existe SceneFader.")]
+    [Tooltip("Duración del fade.")]
     [SerializeField] private float fadeDuration = 0.6f;
 
     private bool isLoading;
 
     public void OnReturnPressed()
     {
-        LoadScene(menuSceneName);
+        LoadSceneWithFade(menuSceneName);
     }
 
     public void OnLevelPressed(string levelSceneName)
     {
-        LoadScene(levelSceneName);
+        LoadSceneWithFade(levelSceneName);
     }
 
-    private void LoadScene(string sceneName)
+    private void LoadSceneWithFade(string sceneName)
     {
         if (isLoading) return;
         isLoading = true;
 
-        if (SceneFader.Instance != null)
+        if (SceneFader.Instance == null)
         {
-            SceneFader.Instance.FadeToScene(sceneName, fadeDuration);
+            isLoading = false;
+            return;
         }
-        else
-        {
-            SceneManager.LoadScene(sceneName);
-        }
+
+        SceneFader.Instance.FadeToScene(sceneName, fadeDuration);
     }
 }
