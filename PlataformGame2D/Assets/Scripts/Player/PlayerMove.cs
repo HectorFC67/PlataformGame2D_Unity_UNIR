@@ -52,6 +52,8 @@ public class PlayerMove : MonoBehaviour
 
     private bool groundedNow;
 
+    private float facingDir = 1f;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -59,6 +61,8 @@ public class PlayerMove : MonoBehaviour
 
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
+
+        facingDir = transform.localScale.x >= 0 ? 1f : -1f;
     }
 
     private void OnEnable()
@@ -84,7 +88,7 @@ public class PlayerMove : MonoBehaviour
             dashAction.action.performed -= OnDashPerformed;
 
         if (attackAction != null)
-        attackAction.action.performed -= OnAttackPerformed;
+            attackAction.action.performed -= OnAttackPerformed;
 
         if (moveAction != null) moveAction.action.Disable();
         if (dashAction != null) dashAction.action.Disable();
@@ -121,13 +125,8 @@ public class PlayerMove : MonoBehaviour
             coyoteTimer = 0f;
         }
 
-        if (attackAction == null && Keyboard.current != null)
-        {
-            TryAttack();
-        }
-
         UpdateAnimator();
-        HandleFlip(moveInput.x);
+        HandleFlipAndFacing(moveInput.x);
     }
 
     private void FixedUpdate()
@@ -169,13 +168,9 @@ public class PlayerMove : MonoBehaviour
     {
         if (Time.time < nextDashTime) return;
         if (isAttacking) return;
+        if (isDashing) return;
 
-        float dir = Mathf.Sign(moveInput.x);
-        if (Mathf.Abs(moveInput.x) < 0.01f)
-        {
-            dir = Mathf.Sign(rb.linearVelocity.x);
-            if (Mathf.Abs(rb.linearVelocity.x) < 0.01f) dir = 1f;
-        }
+        float dir = Mathf.Abs(moveInput.x) > 0.01f ? Mathf.Sign(moveInput.x) : facingDir;
 
         StartCoroutine(DashCoroutine(dir));
     }
@@ -237,12 +232,14 @@ public class PlayerMove : MonoBehaviour
         animator.SetBool("Atacando", isAttacking);
     }
 
-    private void HandleFlip(float xInput)
+    private void HandleFlipAndFacing(float xInput)
     {
         if (Mathf.Abs(xInput) < 0.01f) return;
 
+        facingDir = xInput > 0 ? 1f : -1f;
+
         Vector3 s = transform.localScale;
-        s.x = xInput > 0 ? Mathf.Abs(s.x) : -Mathf.Abs(s.x);
+        s.x = facingDir * Mathf.Abs(s.x);
         transform.localScale = s;
     }
 

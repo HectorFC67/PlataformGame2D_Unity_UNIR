@@ -6,8 +6,11 @@ public class Goal : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private string playerTag = "Player";
 
-    [Tooltip("Tiempo de espera antes de cambiar de escena (por ejemplo, para SFX/VFX).")]
+    [Tooltip("Tiempo de espera antes de iniciar la transición (SFX/VFX).")]
     [SerializeField] private float loadDelay = 0f;
+
+    [Tooltip("Duración del fade al cambiar de escena.")]
+    [SerializeField] private float fadeDuration = 0.6f;
 
     private bool hasTriggered = false;
 
@@ -24,42 +27,57 @@ public class Goal : MonoBehaviour
 
         hasTriggered = true;
 
+        string nextSceneName = GetNextLevelSceneName();
+        if (string.IsNullOrEmpty(nextSceneName)) return;
+
         if (loadDelay > 0f)
-            Invoke(nameof(LoadNextLevel), loadDelay);
+            Invoke(nameof(TriggerLoadNext), loadDelay);
         else
-            LoadNextLevel();
+            TriggerLoadNext();
     }
 
-    private void LoadNextLevel()
+    private void TriggerLoadNext()
+    {
+        string nextSceneName = GetNextLevelSceneName();
+        if (string.IsNullOrEmpty(nextSceneName)) return;
+
+        if (SceneFader.Instance != null)
+        {
+            SceneFader.Instance.FadeToScene(nextSceneName, fadeDuration);
+        }
+        else
+        {
+            Debug.LogWarning("No SceneFader found. Loading scene without fade.");
+            SceneManager.LoadScene(nextSceneName);
+        }
+    }
+
+    private string GetNextLevelSceneName()
     {
         string currentSceneName = SceneManager.GetActiveScene().name;
 
         if (!currentSceneName.StartsWith("Level"))
         {
-            Debug.LogWarning($"Scene '{currentSceneName}' no sigue el formato 'LevelX'. No se puede calcular el siguiente nivel.");
-            return;
+            Debug.LogWarning($"Scene '{currentSceneName}' no sigue el formato 'LevelX'.");
+            return null;
         }
 
         string numberPart = currentSceneName.Replace("Level", "");
 
         if (!int.TryParse(numberPart, out int currentLevelNumber))
         {
-            Debug.LogWarning($"No se pudo leer el número de la escena: '{currentSceneName}'. Asegúrate que sea Level1, Level2, etc.");
-            return;
+            Debug.LogWarning($"No se pudo leer el número de '{currentSceneName}'. Ej: Level1, Level2...");
+            return null;
         }
 
-        int nextLevelNumber = currentLevelNumber + 1;
-        string nextSceneName = "Level" + nextLevelNumber;
+        string nextSceneName = "Level" + (currentLevelNumber + 1);
 
-        if (Application.CanStreamedLevelBeLoaded(nextSceneName))
+        if (!Application.CanStreamedLevelBeLoaded(nextSceneName))
         {
-            SceneManager.LoadScene(nextSceneName);
+            Debug.LogWarning($"No existe '{nextSceneName}' en Build Settings. Puedes mandar al menú final aquí.");
+            return null;
         }
-        else
-        {
-            Debug.LogWarning($"No existe la escena '{nextSceneName}' en Build Settings. Puedes cargar un menú o final aquí.");
-            // Ejemplo: cargar un menú final si no existe el siguiente nivel:
-            // SceneManager.LoadScene("MainMenu");
-        }
+
+        return nextSceneName;
     }
 }
