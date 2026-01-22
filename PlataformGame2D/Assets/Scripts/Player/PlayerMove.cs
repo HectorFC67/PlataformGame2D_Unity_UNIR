@@ -35,6 +35,17 @@ public class PlayerMove : MonoBehaviour
     [Header("Animator")]
     public Animator animator;
 
+    [Header("SFX")]
+    [SerializeField] private AudioSource sfxSource;
+    [SerializeField] private AudioClip walkSfx;
+    [SerializeField] private AudioClip jumpSfx;
+    [SerializeField] private AudioClip dashSfx;
+    [SerializeField] private AudioClip attackSfx;
+
+    [SerializeField] private float walkStepInterval = 0.25f;
+    [SerializeField] private float walkMinSpeed = 0.15f;
+    private float nextStepTime;
+
     private Rigidbody2D rb;
     private BoxCollider2D boxCol;
 
@@ -61,6 +72,9 @@ public class PlayerMove : MonoBehaviour
 
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
+
+        if (sfxSource == null)
+            sfxSource = GetComponent<AudioSource>();
 
         facingDir = transform.localScale.x >= 0 ? 1f : -1f;
     }
@@ -127,6 +141,7 @@ public class PlayerMove : MonoBehaviour
 
         UpdateAnimator();
         HandleFlipAndFacing(moveInput.x);
+        HandleWalkSfx();
     }
 
     private void FixedUpdate()
@@ -141,6 +156,9 @@ public class PlayerMove : MonoBehaviour
     {
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
         rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+
+        PlayOneShot(jumpSfx);
+        nextStepTime = Time.time + walkStepInterval;
     }
 
     private bool IsGrounded_BoxCast()
@@ -180,6 +198,9 @@ public class PlayerMove : MonoBehaviour
         isDashing = true;
         nextDashTime = Time.time + dashCooldown;
 
+        PlayOneShot(dashSfx);
+        nextStepTime = Time.time + walkStepInterval;
+
         float startTime = Time.time;
         while (Time.time < startTime + dashDuration)
         {
@@ -209,6 +230,9 @@ public class PlayerMove : MonoBehaviour
         isAttacking = true;
 
         rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+
+        PlayOneShot(attackSfx);
+        nextStepTime = Time.time + walkStepInterval;
 
         if (animator != null)
             animator.SetBool("Atacando", true);
@@ -241,6 +265,26 @@ public class PlayerMove : MonoBehaviour
         Vector3 s = transform.localScale;
         s.x = facingDir * Mathf.Abs(s.x);
         transform.localScale = s;
+    }
+    private void HandleWalkSfx()
+    {
+        if (walkSfx == null || sfxSource == null) return;
+
+        bool canStep = groundedNow && !isDashing && !isAttacking && Mathf.Abs(moveInput.x) >= walkMinSpeed;
+
+        if (!canStep) return;
+
+        if (Time.time >= nextStepTime)
+        {
+            PlayOneShot(walkSfx);
+            nextStepTime = Time.time + walkStepInterval;
+        }
+    }
+
+    private void PlayOneShot(AudioClip clip, float volume = 1f)
+    {
+        if (clip == null || sfxSource == null) return;
+        sfxSource.PlayOneShot(clip, Mathf.Clamp01(volume));
     }
 
 #if UNITY_EDITOR

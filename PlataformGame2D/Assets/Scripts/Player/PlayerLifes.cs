@@ -2,11 +2,11 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+[RequireComponent(typeof(AudioSource))]
 public class PlayerLifes : MonoBehaviour
 {
     [Header("Damage Filter")]
     [SerializeField] private bool useLayerMask = true;
-
     [SerializeField] private LayerMask enemyDamageLayers;
 
     [SerializeField] private string enemyTag = "Enemy";
@@ -31,8 +31,11 @@ public class PlayerLifes : MonoBehaviour
 
     [Header("Lock Player Controls")]
     [SerializeField] private MonoBehaviour[] scriptsToDisable;
-
     [SerializeField] private bool disableRigidbodySimulation = true;
+
+    [Header("SFX")]
+    [SerializeField] private AudioSource sfxSource;
+    [SerializeField] private AudioClip damageSfx;
 
     private bool hitLocked;
     private Rigidbody2D rb;
@@ -43,6 +46,9 @@ public class PlayerLifes : MonoBehaviour
             animator = GetComponentInChildren<Animator>();
 
         rb = GetComponent<Rigidbody2D>();
+
+        if (sfxSource == null)
+            sfxSource = GetComponent<AudioSource>();
     }
 
     public void NotifyEnemyHit(GameObject other)
@@ -73,6 +79,8 @@ public class PlayerLifes : MonoBehaviour
             hitLocked = false;
             return;
         }
+
+        PlayOneShot(damageSfx);
 
         LockPlayer();
 
@@ -156,5 +164,11 @@ public class PlayerLifes : MonoBehaviour
             SceneFader.Instance.FadeToScene(gameOverSceneName, fadeDuration);
         else
             SceneManager.LoadScene(gameOverSceneName);
+    }
+
+    private void PlayOneShot(AudioClip clip, float volume = 1f)
+    {
+        if (clip == null || sfxSource == null) return;
+        sfxSource.PlayOneShot(clip, Mathf.Clamp01(volume));
     }
 }
