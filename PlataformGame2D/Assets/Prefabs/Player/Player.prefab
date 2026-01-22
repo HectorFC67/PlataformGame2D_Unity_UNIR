@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 6429390597472954409}
   - component: {fileID: 138489430726622653}
   - component: {fileID: 3285954677618322277}
+  - component: {fileID: 6974054332099181698}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -159,7 +160,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0.02375491, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -169,7 +170,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.8, y: 1.05}
+  m_Size: {x: 0.61946225, y: 1.05}
   m_EdgeRadius: 0
 --- !u!114 &6429390597472954409
 MonoBehaviour:
@@ -252,6 +253,25 @@ MonoBehaviour:
   fadeDuration: 0.6
   scriptsToDisable: []
   disableRigidbodySimulation: 1
+--- !u!114 &6974054332099181698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5646860789465130000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52e90707dff31d34c9192d0ba74f8a56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseMenuController
+  pauseAction: {fileID: 7501964630674488121, guid: 9cede5d28c155ce46b3374d98d435de1,
+    type: 3}
+  pausePanel: {fileID: 0}
+  playerControlScripts:
+  - {fileID: 6429390597472954409}
+  levelSelectSceneName: LevelSelector
+  exitFadeDuration: 0.6
 --- !u!1 &6697126225213968006
 GameObject:
   m_ObjectHideFlags: 0
@@ -318,7 +338,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.571394, y: -0.27195}
+  m_Offset: {x: 0.63790804, y: -0.27195}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -328,7 +348,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.50995314, y: 0.45758212}
+  m_Size: {x: 0.54796076, y: 0.45758212}
   m_EdgeRadius: 0
 --- !u!1 &8268847755215948773
 GameObject:

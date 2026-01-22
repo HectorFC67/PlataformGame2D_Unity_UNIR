@@ -7,7 +7,6 @@ public class PlayerHurtbox : MonoBehaviour
 
     private void Awake()
     {
-        // El Hurtbox debe ser Trigger
         var c = GetComponent<Collider2D>();
         c.isTrigger = true;
 
@@ -19,7 +18,6 @@ public class PlayerHurtbox : MonoBehaviour
     {
         if (playerLifes == null) return;
 
-        // Notifica al root
         playerLifes.NotifyEnemyHit(other.gameObject);
     }
 }

@@ -9,6 +9,7 @@ public class MainMenuUI : MonoBehaviour
 
     [Header("Scene Loading")]
     [SerializeField] private string levelSelectorSceneName = "LevelSelector";
+    [SerializeField] private string menuSceneName = "Menu";
     [SerializeField] private float fadeDuration = 0.6f;
 
     private bool isLoading;
@@ -62,6 +63,14 @@ public class MainMenuUI : MonoBehaviour
         if (this.mainMenuPanel != null) this.mainMenuPanel.SetActive(mainMenuPanel);
         if (controlsPanel != null) controlsPanel.SetActive(controls);
         if (optionsPanel != null) optionsPanel.SetActive(options);
+    }
+    public void ReturnMenu()
+    {
+        Time.timeScale = 1f;
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        LoadSceneWithFade(menuSceneName);
     }
 
     private void LoadSceneWithFade(string sceneName)

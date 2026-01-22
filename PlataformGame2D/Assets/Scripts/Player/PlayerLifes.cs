@@ -10,6 +10,7 @@ public class PlayerLifes : MonoBehaviour
     [SerializeField] private LayerMask enemyDamageLayers;
 
     [SerializeField] private string enemyTag = "Enemy";
+    [SerializeField] private string deadzoneTag = "Deadzone";
 
     [SerializeField] private int damagePerHit = 1;
 
@@ -59,7 +60,7 @@ public class PlayerLifes : MonoBehaviour
         if (useLayerMask)
             return (enemyDamageLayers.value & (1 << obj.layer)) != 0;
 
-        return obj.CompareTag(enemyTag);
+        return obj.CompareTag(enemyTag) || obj.CompareTag(deadzoneTag);
     }
 
     private void TakeHit()

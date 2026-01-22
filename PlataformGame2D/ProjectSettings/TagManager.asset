@@ -8,6 +8,7 @@ TagManager:
   - Goal
   - Enemy
   - Sword
+  - Deadzone
   layers:
   - Default
   - TransparentFX

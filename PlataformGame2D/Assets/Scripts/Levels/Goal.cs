@@ -74,6 +74,7 @@ public class Goal : MonoBehaviour
 
         if (!Application.CanStreamedLevelBeLoaded(nextSceneName))
         {
+            SceneFader.Instance.FadeToScene("WinMenu", fadeDuration);
             Debug.LogWarning($"No existe '{nextSceneName}' en Build Settings. Puedes mandar al menú final aquí.");
             return null;
         }
