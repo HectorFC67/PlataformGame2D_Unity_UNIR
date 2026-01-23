@@ -10,8 +10,6 @@ public class CameraController : MonoBehaviour
     [Header("Follow Settings")]
     [Range(0f, 1f)]
     public float followSmoothness = 0.025f;
-
-    [Tooltip("Offset from the target position (useful to keep the player slightly centered).")]
     public Vector3 followOffset = new Vector3(0f, 2f, -10f);
 
     private void LateUpdate()

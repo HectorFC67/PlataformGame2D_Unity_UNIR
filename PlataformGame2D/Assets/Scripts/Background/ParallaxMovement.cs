@@ -47,8 +47,6 @@ public class ParallaxMovement : MonoBehaviour
             float depth = backgrounds[i].transform.position.z - cam.position.z;
             if (depth > farthestBack) farthestBack = depth;
         }
-
-        // Evita división por cero si todos están al mismo z
         if (Mathf.Approximately(farthestBack, 0f)) farthestBack = 1f;
 
         for (int i = 0; i < backCount; i++)
@@ -62,7 +60,6 @@ public class ParallaxMovement : MonoBehaviour
     {
         distance = cam.position.x - camStartPos.x;
 
-        // Mantén el offset inicial exacto
         transform.position = new Vector3(parentStartPos.x + distance, parentStartPos.y, parentStartPos.z);
 
         for (int i = 0; i < backgrounds.Length; i++)

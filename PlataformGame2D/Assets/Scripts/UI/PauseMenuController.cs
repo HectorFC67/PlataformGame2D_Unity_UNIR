@@ -53,22 +53,18 @@ public class PauseMenuController : MonoBehaviour
 
     public void Resume()
     {
-        // Volvemos al gameplay: aquí sí tiene sentido bloquear el cursor si tu juego lo requiere
         SetPaused(false);
         ApplyCursorForGameplay();
     }
 
     public void ExitToLevelSelect()
     {
-        // 1) Reanuda el tiempo (importante para la siguiente escena)
         Time.timeScale = 1f;
 
-        // 2) Oculta UI de pausa
         _isPaused = false;
         if (pausePanel != null)
             pausePanel.SetActive(false);
 
-        // 3) Reactiva scripts del jugador (por si vuelves a jugar más tarde)
         if (playerControlScripts != null)
         {
             foreach (var b in playerControlScripts)
@@ -77,10 +73,8 @@ public class PauseMenuController : MonoBehaviour
             }
         }
 
-        // 4) MUY IMPORTANTE: dejar el cursor en modo UI para el selector de niveles
         ApplyCursorForUI();
 
-        // 5) Fade + cambio de escena
         if (SceneFader.Instance != null)
         {
             SceneFader.Instance.FadeToScene(levelSelectSceneName, exitFadeDuration);
@@ -101,10 +95,8 @@ public class PauseMenuController : MonoBehaviour
 
         Time.timeScale = _isPaused ? 0f : 1f;
 
-        // En pausa queremos cursor para UI
         if (_isPaused) ApplyCursorForUI();
 
-        // Control del jugador
         if (playerControlScripts != null)
         {
             foreach (var b in playerControlScripts)
